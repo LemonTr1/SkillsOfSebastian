@@ -7,7 +7,7 @@ description: 执行发送HTTP请求的快捷脚本
 - 向目标url发送简单的http请求，可用于判断网络连通性，执行优先级高于dispatcher("Web")
 
 ## 脚本执行：
-- 使用bash工具：bash ~/.sebastian/skills/http_req/scripts/http_req.sh
+- bash ~/.sebastian/skills/http_req/scripts/http_req.sh
 
 ## 脚本传参说明：
 - $1=HTTP方法(default: GET), $2=URL, $3=请求数据(仅POST方法有效)

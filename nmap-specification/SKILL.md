@@ -18,3 +18,4 @@ description: Nmap使用指南和可执行脚本
 - parameters: $1=目的主机的IP地址
 - usage: bash ~/.sebastian/skills/nmap-specification/scripts/syn_scan_target.sh <parameters>
 
+
