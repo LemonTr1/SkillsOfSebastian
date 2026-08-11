@@ -24,6 +24,19 @@ from pathlib import Path
 
 
 def main():
+    # Environment guard: live capture is NOT supported in this sandbox.
+    # Raw sockets require CAP_NET_RAW / root, both unavailable here.
+    # Fail fast with a clear message instead of a cryptic kernel error.
+    print(json.dumps({
+        "error": "Live capture is disabled in this environment: "
+                 "raw sockets require CAP_NET_RAW / root privileges, "
+                 "which the sandbox does not provide. "
+                 "Use offline analysis (analyze_tshark.py) on an existing pcap file instead.",
+        "exit_code": 3,
+        "status": "blocked",
+    }, indent=2))
+    sys.exit(3)
+
     parser = argparse.ArgumentParser(description="TShark live capture wrapper")
     parser.add_argument("--iface", default="any", help="Interface to capture on")
     parser.add_argument("--duration", type=int, default=10, help="Seconds to capture")
@@ -47,8 +60,9 @@ def main():
         sys.exit(2)
     tshark_bin = which.stdout.strip()
 
-    # Build command (raw capture needs privileges -> sudo -n)
-    cmd = ["sudo", "-n", tshark_bin,
+    # Build command (no sudo: sandbox cannot elevate. Raw capture may need
+    # privileges; try without sudo and surface tshark's stderr on failure.)
+    cmd = [tshark_bin,
            "-i", args.iface,
            "-s", str(args.snaplen),
            "-w", str(out_path)]

@@ -1,12 +1,13 @@
 : "
 name: syn_scan_target.sh
-description: 使用Nmap的SYN模式扫描目的主机的全端口信息，服务类型和操作系统类型
+description: 使用Nmap的TCP connect模式扫描目的主机的全端口信息，服务类型和操作系统类型（非root环境可用）
 parameters: $1=目的主机的IP地址
 "
 #!/usr/bin/env bash
-# nmap_fullscan.sh — SYN stealth full-port scan with OS & service detection
+# nmap_fullscan.sh — TCP connect full-port scan with service detection
 # Usage: ./nmap_fullscan.sh <target>
-# Note: User must have sudo privileges for nmap.
+# Note: No root required. Uses -sT (TCP connect) instead of -sS (SYN, needs root).
+#       -O (OS detection) needs root too, so it's replaced with -A light fingerprints.
 
 set -euo pipefail
 
@@ -18,21 +19,16 @@ if [[ -z "$TARGET" ]]; then
     exit 1
 fi
 
-if ! command -v nmap &>/dev/null; then
+if ! command -v nmap; then
     echo "[!] nmap not found. Install: apt install nmap / brew install nmap"
     exit 1
 fi
 
-if ! sudo -n true 2>/dev/null; then
-    echo "[*] sudo required for SYN scan. Enter password if prompted."
-    sudo -v || { echo "[!] sudo authentication failed."; exit 1; }
-fi
-
-echo "[*] Starting SYN scan on $TARGET ..."
-echo "[*] Ports: 1-65535 | OS detect | Service detect"
+echo "[*] Starting TCP connect scan on $TARGET ..."
+echo "[*] Ports: 1-65535 | Service detect | Light fingerprint (no root)"
 echo ""
 
-sudo nmap -sS -p- -O -sV --version-intensity 5 --osscan-limit --reason -T4 -v --open "$TARGET"
+nmap -sT -Pn -p- -sV --version-intensity 5 --reason -T4 -v --open "$TARGET"
 
 echo ""
 echo "[*] Scan complete."

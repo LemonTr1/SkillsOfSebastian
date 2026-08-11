@@ -7,7 +7,12 @@ HOST="${1:-localhost}"
 PORT="${2:-80}"
 TIMEOUT="${3:-5}"
 
-if timeout "$TIMEOUT" bash -c "echo >/dev/tcp/$HOST/$PORT" 2>/dev/null; then
+# /dev/null is read-only inside the sandbox; use a writable tmp file instead
+DEVNULL="/tmp/.sebastian_devnull_$$"
+: > "$DEVNULL" 2>&1 || DEVNULL="/tmp/.sebastian_devnull"
+trap 'rm -f "$DEVNULL"' EXIT
+
+if timeout "$TIMEOUT" bash -c "echo >/dev/tcp/$HOST/$PORT" 2>"$DEVNULL"; then
     echo "{\"host\":\"$HOST\",\"port\":$PORT,\"open\":true}"
 else
     echo "{\"host\":\"$HOST\",\"port\":$PORT,\"open\":false}"

@@ -25,6 +25,19 @@ import time
 from pathlib import Path
 
 def main():
+    # Environment guard: live capture is NOT supported in this sandbox.
+    # Raw sockets require CAP_NET_RAW / root, both unavailable here.
+    # Fail fast with a clear message instead of a cryptic kernel error.
+    print(json.dumps({
+        "error": "Live capture is disabled in this environment: "
+                 "raw sockets require CAP_NET_RAW / root privileges, "
+                 "which the sandbox does not provide. "
+                 "Use offline analysis (analyze.py) on an existing pcap file instead.",
+        "exit_code": 3,
+        "status": "blocked",
+    }, indent=2))
+    sys.exit(3)
+
     parser = argparse.ArgumentParser(description="tcpdump capture wrapper")
     parser.add_argument("--iface", default="any", help="Interface to capture on")
     parser.add_argument("--duration", type=int, default=10, help="Seconds to capture")
@@ -49,9 +62,9 @@ def main():
 
     tcpdump_bin = tcpdump.stdout.strip()
 
-    # Build command (use sudo -n since raw packet capture needs privileges)
+    # Build command (no sudo: sandbox cannot elevate. Raw capture may need
+    # privileges; try without sudo and surface tcpdump's stderr on failure.)
     cmd = [
-        "sudo", "-n",
         tcpdump_bin,
         "-i", args.iface,
         "-nn",                    # numeric everything
